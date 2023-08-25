@@ -66,6 +66,16 @@ export default {
       };
     },
   mounted() {
+    this.$socket.onopen = () => {
+      this.getPosts()
+      if (getCookie()){
+        const addUser = {
+          type: "addUserToConnection",
+          uuid: getCookieValue(),
+        };
+        this.$socket.send(JSON.stringify(addUser))
+      }
+    }
     if (!getCookie()){
       document.getElementById("loginButton").style.display = "block";
       document.getElementById("registerButton").style.display = "block";
@@ -82,9 +92,6 @@ export default {
       document.getElementById("post-creation").style.display = "block";
       document.getElementById("privateMesssage").style.display = "block";
     }
-    this.$socket.onopen = () => {
-      this.getPosts()
-    };
     this.$socket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
@@ -96,7 +103,8 @@ export default {
       } catch (error) {
         console.error('No UUID for cookie', error);
       }
-    };
+      this.getPosts()
+    }
   },
   methods: {
     navigateToLoginPage() {
@@ -134,7 +142,6 @@ export default {
           Content: document.getElementById(`comment-input-${title}`).value, 
           PostID: title
         };
-        console.log(commentData)
       this.$socket.send(JSON.stringify(commentData))
       this.getPosts()
       this.$router.push('/');
@@ -143,21 +150,20 @@ export default {
       const postsJSON = {
         type: "posts", 
       };
-    this.$socket.send(JSON.stringify(postsJSON))
-    this.$socket.onmessage = (event) =>{
-      const postList = JSON.parse(event.data);
-      this.Posts = postList
-      console.log(this.Posts)
-    }
+      this.$socket.send(JSON.stringify(postsJSON))
+      this.$socket.onmessage = (event) =>{
+        const postList = JSON.parse(event.data);
+        this.Posts = postList
+      }
     },
     getCookie() {
-    const cookies = document.cookie.split("; ");
-    for (let i = 0; i < cookies.length; i++) {
+      const cookies = document.cookie.split("; ");
+      for (let i = 0; i < cookies.length; i++) {
         const cookie = cookies[i].split("=");
         if (cookie[0] === "userID") {
             return cookie[1];
         }
-    }
+      }
     return "";
     }
   },

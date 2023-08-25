@@ -85,13 +85,23 @@ export default {
             this.$router.push('/cabinet');
         },
         navigateToMainPage() {
-            this.$router.push('/');
+          const userUUIDData = {
+            type: "user_uuid",
+            uuid: getCookieValue(),
+          };
+          this.$socket.send(JSON.stringify(userUUIDData))
+          this.$router.push('/');
         },
         navigateToPrivateMesssage() {
             this.$router.push('/messages'); 
         },
         logout() {
             document.cookie = "userID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            const logoutData = {
+                type: "log_out",
+                uuuid: getCookieValue(),
+            };
+            this.$socket.send(JSON.stringify(logoutData))
             this.$router.push('/'); 
         },
     },
