@@ -12,8 +12,8 @@
                 <div class="user-list" id="user-list-container">
                     <ul id="user-list" >
                         <template v-for="users in Users" v-bind:key="users.ID">
-                            <li v-if="users.Activity != 'offline'">
-                                <a :data-status=users.Activity :id="'user-'+users.Nickname" @click="showMessages(users.Nickname)">{{users.Nickname}}</a>
+                            <li>
+                                <a :data-status=users.Activity :id="'user-'+users.Nickname" @click="showMessages(users.Nickname, users.Activity)">{{users.Nickname}}</a>
                             </li>
                         </template>
                     </ul>
@@ -21,7 +21,17 @@
                 <div id="chat-window" class="chat-window">
                 <h2>Chat</h2>
                     <div id="message-list" class="message-list">
-                        <!-- Message list will be populated dynamically -->
+                        <template v-for="messages in Messages" v-bind:key="messages.Time">
+                            <li>
+                                <h3>Text {{messages.Content}}</h3>
+                                <a>Time {{messages.Time}}</a>
+                                <a>Name {{messages.SenderId}}</a>
+                            </li>
+                        </template>
+                    </div>
+                    <div id="messages" v-if="this.activity == 'online'">
+                        <input type="text" id="message-input" placeholder="Type your message..." />
+                        <button @click="sendPrivateMessage(this.user)">Send</button>
                     </div>
                 </div>
             </div>
@@ -34,7 +44,10 @@ export default {
     data() {
       return {
         Users:[],
+        Messages:[],
         current_user:"",
+        activity:"offline",
+        user:""
       };
     },
     mounted() {
@@ -49,7 +62,6 @@ export default {
             this.$socket.send(JSON.stringify(userData))
             this.$socket.onmessage = (event) =>{
                 const userList = JSON.parse(event.data);
-                console.log(userList)
                 this.Users = userList
             }
         },
@@ -64,13 +76,31 @@ export default {
         navigateToCabinetPage() {
             this.$router.push('/cabinet'); 
         },
-        showMessages(name){
+        sendPrivateMessage(nickanme){
+            const message = document.getElementById(`message-input`).value;
             const userMessageData = {
-                type: "showmessage", 
-                UUID: getCookie(), 
-                Nickname: name,
+                type: "sendPrivateMessage", 
+                UserID: getCookieValue(), 
+                Nickname: nickanme,
+                Content: message,
             }
             this.$socket.send(JSON.stringify(userMessageData))
+        },
+        showMessages(name, activity){
+            const userMessageData = {
+                type: "showmessage", 
+                UserID: getCookieValue(), 
+                Nickname: name,
+                Offset: 0,
+            }
+            this.$socket.send(JSON.stringify(userMessageData))
+            this.$socket.onmessage = (event) =>{
+                const messagesList = JSON.parse(event.data);
+                console.log(messagesList)
+                this.Messages = messagesList
+                this.activity = activity
+                this.user = name
+            }
         },
         logout() {
             document.cookie = "userID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
