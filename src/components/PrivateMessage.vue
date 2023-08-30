@@ -13,7 +13,7 @@
                     <ul id="user-list" >
                         <template v-for="users in Users" v-bind:key="users.ID">
                             <li>
-                                <a :data-status=users.Activity :id="'user-'+users.Nickname" @click="showMessages(users.Nickname, users.Activity)">{{users.Nickname}}</a>
+                                <a :data-status=users.activity :id="'user-'+users.Nickname" @click="showMessages(users.Nickname, users.activity)">{{users.Nickname}}</a>
                             </li>
                         </template>
                     </ul>
@@ -31,7 +31,7 @@
                     </div>
                     <div id="messages" v-if="this.activity == 'online'">
                         <input type="text" id="message-input" placeholder="Type your message..." />
-                        <button @click="sendPrivateMessage(this.user)">Send</button>
+                        <button @click="sendPrivateMessage(this.user, this.activity)">Send</button>
                     </div>
                 </div>
             </div>
@@ -76,7 +76,7 @@ export default {
         navigateToCabinetPage() {
             this.$router.push('/cabinet'); 
         },
-        sendPrivateMessage(nickanme){
+        sendPrivateMessage(nickanme, activity){
             const message = document.getElementById(`message-input`).value;
             const userMessageData = {
                 type: "sendPrivateMessage", 
@@ -85,6 +85,7 @@ export default {
                 Content: message,
             }
             this.$socket.send(JSON.stringify(userMessageData))
+            this.showMessages(nickanme, activity)
         },
         showMessages(name, activity){
             const userMessageData = {
@@ -96,8 +97,8 @@ export default {
             this.$socket.send(JSON.stringify(userMessageData))
             this.$socket.onmessage = (event) =>{
                 const messagesList = JSON.parse(event.data);
-                console.log(messagesList)
                 this.Messages = messagesList
+                this.Messages = this.Messages.reverse()
                 this.activity = activity
                 this.user = name
             }
