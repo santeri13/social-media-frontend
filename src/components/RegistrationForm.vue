@@ -29,6 +29,14 @@
         <label for="password">Password:</label>
         <input type="password" id="password" v-model="password" required>
       </div>
+      <div class="form-example">
+        <label>Avatar/Image:</label>
+        <input type="file" accept="image/*" @change="selectImage">
+      </div>
+      <div class="form-example">
+        <label>About Me:</label>
+        <input type="text" id="me_text"  v-model="me_text">
+      </div>
       <button type="submit">Register</button>
       <p>Already have an account? <a @click="navigateToLoginPage" class="login-link">Login</a></p>
     </form>
@@ -46,11 +54,33 @@
         gender:"",
         email:"",
         password:"",
-        // Other registration form data (first name, last name, etc.)
+        selectedImage: null,
+        me_text: "",
       };
     },
     methods: {
-      register() {
+      async register() {
+        let imagePath = "";
+        if (this.selectedImage) {
+          const formData = new FormData();
+          formData.append("image", this.selectedImage);
+
+          // Use the Fetch API to upload the image to the server
+          try {
+            const response = await fetch("/upload", {
+              method: "POST",
+              body: formData,
+            });
+
+            if (response.ok) {
+              imagePath = await response.text();
+            } else {
+              console.error("Image upload failed");
+            }
+          } catch (error) {
+          console.error("Image upload error:", error);
+          }
+        }
         // Send registration data to the backend using API call
         const registrationData = {
           type: "register",
@@ -61,14 +91,19 @@
           gender: this.gender,
           email: this.email,
           password: this.password,
+          avatar: imagePath,
+          about_me: this.me_text,
         };
 
         this.$socket.send(JSON.stringify(registrationData))
         this.$router.push('/');
       },
-    navigateToLoginPage() {
-      this.$router.push('/login'); // Navigate to the Login page
-    },
+      navigateToLoginPage() {
+        this.$router.push('/login'); // Navigate to the Login page
+      },
+      selectImage(event) {
+        this.selectedImage = event.target.files[0];
+      },
     },
   };
 </script>

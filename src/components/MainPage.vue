@@ -6,8 +6,17 @@
       <button id="cabinetButton" @click="navigateToCabinetPage">Profile</button>
       <button id="privateMesssage" @click="navigateToPrivateMesssage">Messages</button>
       <button id="logoutButton" @click="logout">Logout</button>
+      <button id="userList" @click="getUserList">User List</button>
     </header>
     <main>
+      <div class="user-list-container">
+        <ul class="user-list">
+          <li v-for="user in UserList" :key="user.UserID">
+            <p>{{ user.Nickname }}</p>
+            <p>{{ user.activity }}</p>
+          </li>
+        </ul>
+      </div>
       <div id="post-creation">
         <h2>Create a Post</h2>
         <label for="post-title">Title:</label>
@@ -22,7 +31,10 @@
           <option value="news">News</option>
           <option value="discussion">Discussion</option>
         </select>
-                
+
+        <label for="post-image">Image/GIF:</label>
+        <input type="file" accept="image/*" @change="selectImage" />
+
         <button @click="sendpost">Create Post</button>
       </div>
         
@@ -32,6 +44,7 @@
           <ul class="post-list" v-if="post != null">
             <h3>{{post.Title}}</h3>
             <p>{{post.Content}}</p>
+            <img :src="post.ImagePath" v-if="post.ImagePath != ''">
             <p>Category: {{post.Category}}</p>
             <p>Author: {{post.Nickname}}</p>
             <div v-if="getCookie() != ''" class="comment-section">
@@ -62,7 +75,9 @@ export default {
         Title: "",
         Content: "",
         Category: "",
+        selectedImage: null,
         Posts:[],
+        UserList:[],
       };
     },
   mounted() {
@@ -83,6 +98,7 @@ export default {
       document.getElementById("cabinetButton").style.display = "none";
       document.getElementById("post-creation").style.display = "none";
       document.getElementById("privateMesssage").style.display = "none";
+      document.getElementById("userList").style.display = "none";
     }
     else{
       document.getElementById("loginButton").style.display = "none";
@@ -91,6 +107,7 @@ export default {
       document.getElementById("cabinetButton").style.display = "block";
       document.getElementById("post-creation").style.display = "block";
       document.getElementById("privateMesssage").style.display = "block";
+      document.getElementById("userList").style.display = "block";
     }
     this.$socket.onmessage = (event) => {
       try {
@@ -123,13 +140,38 @@ export default {
       document.cookie = "userID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
       this.$router.push('/login'); 
     },
-    sendpost() {
+    selectImage(event) {
+      this.selectedImage = event.target.files[0];
+    },
+    async sendpost() {
+      let imagePath = "";
+      if (this.selectedImage) {
+        const formData = new FormData();
+        formData.append("image", this.selectedImage);
+
+        // Use the Fetch API to upload the image to the server
+        try {
+          const response = await fetch("/upload", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (response.ok) {
+            imagePath = await response.text();
+          } else {
+            console.error("Image upload failed");
+          }
+        } catch (error) {
+          console.error("Image upload error:", error);
+        }
+      }
       const postData = {
           type: "post",
           UserID: getCookieValue(),
           Title: this.Title,
           Content: this.Content,
           Category: this.Category,
+          ImagePath: imagePath,
         };
       this.$socket.send(JSON.stringify(postData))
       this.getPosts()
@@ -146,6 +188,17 @@ export default {
       this.getPosts()
       this.$router.push('/');
     },
+    getUserList() {
+      const userListRequest = {
+        type: "userlist",
+        UUID: getCookieValue(),
+      };
+      this.$socket.send(JSON.stringify(userListRequest));
+      this.$socket.onmessage = (event) => {
+        this.UserList = event.data;
+        console.log(this.UserList)
+      }
+    },
     getPosts(){
       const postsJSON = {
         type: "posts", 
@@ -153,6 +206,7 @@ export default {
       this.$socket.send(JSON.stringify(postsJSON))
       this.$socket.onmessage = (event) =>{
         const postList = JSON.parse(event.data);
+        console.log(postList)
         this.Posts = postList
       }
     },
@@ -247,5 +301,26 @@ select{
 }
 .comment-list{
     margin-top: 10px;
+}
+.user-list-container {
+  position: absolute;
+  top: 10px; /* Adjust the top distance as needed */
+  right: 10px; /* Adjust the right distance as needed */
+  background-color: #fff; /* Background color of the user list */
+  border: 1px solid #ddd; /* Border style */
+  padding: 10px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2); /* Add shadow effect */
+  max-height: 500px; /* Limit the maximum height of the list */
+  overflow-y: auto; /* Enable vertical scrolling if the list overflows */
+}
+
+.user-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.user-list li {
+  margin-bottom: 5px;
 }
 </style>

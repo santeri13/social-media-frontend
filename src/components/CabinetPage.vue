@@ -15,23 +15,32 @@
                 </div>
                 <div class="form-example">
                     <label>First name:</label>
-                    <input type="text" id="firstname" name="firstname" v-model="firstname">
+                    <input type="text" id="firstname" name="firstname" v-model="firstname" required>
                 </div>
                 <div class="form-example">
                     <label>Last name:</label>
-                    <input type="text" id="lastname" name="lastname" v-model="lastname">
+                    <input type="text" id="lastname" name="lastname" v-model="lastname" required>
                 </div>
                 <div class="form-example">
                     <label>Age:</label>
-                    <input type="number" id="age" name="age" v-model="age">
+                    <input type="number" id="age" name="age" v-model="age" required>
                 </div>
                 <div class="form-example">
                     <label>Gender:</label>
-                    <input type="text" id="gender" name="gender" v-model="gender">
+                    <input type="text" id="gender" name="gender" v-model="gender" required>
                 </div>
                 <div class="form-example">
                     <label>Email:</label>
-                    <input type="email" id="email" name="email" v-model="email">
+                    <input type="email" id="email" name="email" v-model="email" required>
+                </div>
+                <div class="form-example">
+                    <label>Avatar/Image:</label>
+                    <img :src="avatar" v-if="avatar != ''">
+                    <input type="file" accept="image/*" @change="selectImage">
+                </div>
+                <div class="form-example">
+                    <label>About Me:</label>
+                    <input type="text" id="me_text"  v-model="me_text">
                 </div>
                 <button type="submit">Update</button>
             </form>
@@ -50,6 +59,9 @@ export default {
         age: 0,
         gender: "",
         email: "",
+        selectedImage: null,
+        me_text: "",
+        avatar:"",
       };
     },
     mounted() {
@@ -67,22 +79,48 @@ export default {
         this.age = data.Age;
         this.gender = data.Gender;
         this.email = data.Email;
+        this.avatar = data.Avatar;
+        this.me_text = data.About;
       }
     },
     methods: {
-        change() {
-            const changeData = {
-                type: "change",
-                userid: this.userid,
-                nickname: this.nickname,
-                firstname: this.firstname,
-                lastname: this.lastname,
-                age: this.age,
-                gender: this.gender,
-                email: this.email,
-            };
-            this.$socket.send(JSON.stringify(changeData))
-            this.$router.push('/cabinet');
+        async change() {
+          let imagePath = "";
+          if (this.selectedImage) {
+            const formData = new FormData();
+            formData.append("image", this.selectedImage);
+
+            // Use the Fetch API to upload the image to the server
+            try {
+              const response = await fetch("/upload", {
+                method: "POST",
+                body: formData,
+              });
+
+              if (response.ok) {
+                imagePath = await response.text();
+              } else {
+                console.error("Image upload failed");
+              }
+            } catch (error) {
+            console.error("Image upload error:", error);
+            }
+          }
+          const changeData = {
+            type: "change",
+            userid: this.userid,
+            nickname: this.nickname,
+            firstname: this.firstname,
+            lastname: this.lastname,
+            age: this.age,
+            gender: this.gender,
+            email: this.email,
+            avatar: imagePath,
+            about_me: this.me_text,
+
+          };
+          this.$socket.send(JSON.stringify(changeData))
+          this.$router.push('/cabinet');
         },
         navigateToMainPage() {
           const userUUIDData = {
@@ -103,6 +141,9 @@ export default {
             };
             this.$socket.send(JSON.stringify(logoutData))
             this.$router.push('/'); 
+        },
+        selectImage(event) {
+          this.selectedImage = event.target.files[0];
         },
     },
 };
