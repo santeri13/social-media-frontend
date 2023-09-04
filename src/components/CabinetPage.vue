@@ -42,6 +42,14 @@
                     <label>About Me:</label>
                     <input type="text" id="me_text"  v-model="me_text">
                 </div>
+                <div class="form-example">
+                    <label>Privacy:</label>
+                    <select id="privacy-category" v-model="privacy" required>
+                      <option value="public">Public</option>
+                      <option value="private">Private</option>
+                      <option value="almost private">Almost private</option>
+                    </select>
+                </div>
                 <button type="submit">Update</button>
             </form>
         </div>
@@ -62,6 +70,7 @@ export default {
         selectedImage: null,
         me_text: "",
         avatar:"",
+        privacy:"",
       };
     },
     mounted() {
@@ -81,7 +90,12 @@ export default {
         this.email = data.Email;
         this.avatar = data.Avatar;
         this.me_text = data.About;
+        this.privacy = data.privacy;
+        console.log(this.privacy)
+        document.getElementById("privacy-category").value = this.privacy;
       }
+
+
     },
     methods: {
         async change() {
@@ -117,7 +131,7 @@ export default {
             email: this.email,
             avatar: imagePath,
             about_me: this.me_text,
-
+            privacy: this.privacy,
           };
           this.$socket.send(JSON.stringify(changeData))
           this.$router.push('/cabinet');

@@ -63,6 +63,7 @@ export default {
             this.$socket.onmessage = (event) =>{
                 const userList = JSON.parse(event.data);
                 this.Users = userList
+                console.log(this.Users)
             }
         },
         navigateToMainPage() {

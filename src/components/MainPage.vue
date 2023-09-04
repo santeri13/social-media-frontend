@@ -9,12 +9,14 @@
       <button id="userList" @click="getUserList">User List</button>
     </header>
     <main>
-      <div class="user-list-container">
+      <div class="user-list-container" id="user-list-container">
         <ul class="user-list">
-          <li v-for="user in UserList" :key="user.UserID">
-            <p>{{ user.Nickname }}</p>
-            <p>{{ user.activity }}</p>
-          </li>
+          <template v-for="user in UserList" v-bind:key="user.ID">
+            <li>
+              <p @click="navigateToUserPage(user.user_uuid)">Username: {{ user.Nickname }} Status: {{ user.activity }}</p>
+              <button id="followUser" @click="followUser(user.user_uuid)">Follow</button>
+            </li>
+          </template>
         </ul>
       </div>
       <div id="post-creation">
@@ -78,6 +80,8 @@ export default {
         selectedImage: null,
         Posts:[],
         UserList:[],
+        disabled:false,
+        followed:false,
       };
     },
   mounted() {
@@ -91,6 +95,7 @@ export default {
         this.$socket.send(JSON.stringify(addUser))
       }
     }
+    document.getElementById("user-list-container").style.display = "none";
     if (!getCookie()){
       document.getElementById("loginButton").style.display = "block";
       document.getElementById("registerButton").style.display = "block";
@@ -135,6 +140,14 @@ export default {
     },
     navigateToPrivateMesssage() {
       this.$router.push('/messages'); 
+    },
+    navigateToUserPage(user_id){
+      const userData = {
+          type: "cabinet",
+          uuid: user_id,
+        };
+      this.$socket.send(JSON.stringify(userData))
+      this.$router.push('/userpage');
     },
     logout() {
       document.cookie = "userID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
@@ -195,7 +208,9 @@ export default {
       };
       this.$socket.send(JSON.stringify(userListRequest));
       this.$socket.onmessage = (event) => {
-        this.UserList = event.data;
+        document.getElementById("user-list-container").style.display = "block";
+        const userList = JSON.parse(event.data);
+        this.UserList = userList;
         console.log(this.UserList)
       }
     },
@@ -206,9 +221,24 @@ export default {
       this.$socket.send(JSON.stringify(postsJSON))
       this.$socket.onmessage = (event) =>{
         const postList = JSON.parse(event.data);
-        console.log(postList)
         this.Posts = postList
       }
+    },
+    followUser(userid){
+      if (this.followed === true){
+        this.followed = false
+        this.disabled = false
+      }
+      else{
+        this.followed = true
+        this.disabled = true
+      }
+      const followUser = {
+        type: "followUser",
+        userid: userid,
+        user_uuid: getCookieValue(),
+      };
+      this.$socket.send(JSON.stringify(followUser))
     },
     getCookie() {
       const cookies = document.cookie.split("; ");
@@ -304,13 +334,13 @@ select{
 }
 .user-list-container {
   position: absolute;
-  top: 10px; /* Adjust the top distance as needed */
+  top: 51px; /* Adjust the top distance as needed */
   right: 10px; /* Adjust the right distance as needed */
   background-color: #fff; /* Background color of the user list */
   border: 1px solid #ddd; /* Border style */
+  border-radius: 60px;
   padding: 10px;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.2); /* Add shadow effect */
-  max-height: 500px; /* Limit the maximum height of the list */
   overflow-y: auto; /* Enable vertical scrolling if the list overflows */
 }
 
