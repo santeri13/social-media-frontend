@@ -5,6 +5,8 @@
         <button id="mainButton" @click="navigateToMainPage">Main Page</button>
         <button id="cabinetButton" @click="navigateToCabinetPage">Profile</button>
         <button id="privateMesssage" @click="navigateToPrivateMesssage">Messages</button>
+        <button id="privateMesssage" @click="navigateToGroups">Groups</button>
+        <button id="userList" @click="getUserList">User List</button>
         <button id="logoutButton" @click="logout">Logout</button>
       </header>
       <main>
@@ -18,6 +20,15 @@
             <p v-if="me_text != ''">{{me_text}}</p>
             <img :src="avatar" v-if="avatar != ''">
             <button id="followUser" @click="followUser(userid)">Follow</button>
+
+            <div id="followUsers">
+                <template v-for="followusers in followUserList" v-bind:key="followusers.ID">
+                    <ul class="users-list" v-if="followusers != null">
+                        <p>{{followusers.UserID}}</p>
+                        <p>{{followusers.Nickname}}</p>
+                    </ul>
+                </template>
+            </div>
 
             <div id="post-feed">
                 <h2>Post Feed</h2>
@@ -55,6 +66,7 @@ export default {
         privacy:"",
         Posts:[],
         followed:false,
+        followUserList:[],
       };
     },
     mounted() {
@@ -79,6 +91,15 @@ export default {
                 const data = JSON.parse(event.data);
                 this.Posts = data
             }
+            const followers = {
+                type: "user_folowers",
+                uuid: this.userid,
+            };
+            this.$socket.send(JSON.stringify(followers))
+            this.$socket.onmessage = (users) => {
+                const data = JSON.parse(users.data);
+                this.followUserList = data
+            }
         }
     },
     methods: {
@@ -95,6 +116,21 @@ export default {
         },
         navigateToPrivateMesssage() {
             this.$router.push('/messages'); 
+        },
+        getUserList() {
+            const userListRequest = {
+                type: "userlist",
+                UUID: getCookieValue(),
+            };
+            this.$socket.send(JSON.stringify(userListRequest));
+            this.$socket.onmessage = (event) => {
+                document.getElementById("user-list-container").style.display = "block";
+                const userList = JSON.parse(event.data);
+                this.UserList = userList;
+            }
+        },
+        navigateToGroups(){
+            this.$router.push('/groups'); 
         },
         logout() {
             document.cookie = "userID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";

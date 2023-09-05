@@ -9,6 +9,7 @@ import RegistrationForm from './components/RegistrationForm.vue';
 import CabinetPage from './components/CabinetPage.vue';
 import PrivateMessage from './components/PrivateMessage.vue';
 import UserPage from './components/UserPage.vue';
+import UserGroups from './components/UserGroups.vue';
 
 const routes = [
     { path: "/", component: MainPage},
@@ -17,6 +18,7 @@ const routes = [
     { path: "/cabinet", component: CabinetPage},
     { path: "/messages", component: PrivateMessage},
     { path: "/userpage", component: UserPage},
+    { path: "/groups", component: UserGroups},
 ];
 
 const router = createRouter({
@@ -39,5 +41,6 @@ app.component('RegistrationForm', RegistrationForm);
 app.component('CabinetPage', CabinetPage);
 app.component('PrivateMessage', PrivateMessage);
 app.component('UserPage', UserPage);
+app.component('UserGroups', UserGroups);
 
 app.mount('#app'); // Mount the app to the #app element

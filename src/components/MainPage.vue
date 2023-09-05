@@ -5,8 +5,9 @@
       <button id="registerButton" @click="navigateToRegistrationPage">Registration</button>
       <button id="cabinetButton" @click="navigateToCabinetPage">Profile</button>
       <button id="privateMesssage" @click="navigateToPrivateMesssage">Messages</button>
-      <button id="logoutButton" @click="logout">Logout</button>
+      <button id="groups" @click="navigateToGroups">Groups</button>
       <button id="userList" @click="getUserList">User List</button>
+      <button id="logoutButton" @click="logout">Logout</button>
     </header>
     <main>
       <div class="user-list-container" id="user-list-container">
@@ -104,6 +105,7 @@ export default {
       document.getElementById("post-creation").style.display = "none";
       document.getElementById("privateMesssage").style.display = "none";
       document.getElementById("userList").style.display = "none";
+      document.getElementById("groups").style.display = "none";
     }
     else{
       document.getElementById("loginButton").style.display = "none";
@@ -113,6 +115,7 @@ export default {
       document.getElementById("post-creation").style.display = "block";
       document.getElementById("privateMesssage").style.display = "block";
       document.getElementById("userList").style.display = "block";
+      document.getElementById("groups").style.display = "block";
     }
     this.$socket.onmessage = (event) => {
       try {
@@ -148,6 +151,9 @@ export default {
         };
       this.$socket.send(JSON.stringify(userData))
       this.$router.push('/userpage');
+    },
+    navigateToGroups(){
+      this.$router.push('/groups'); 
     },
     logout() {
       document.cookie = "userID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
@@ -211,7 +217,6 @@ export default {
         document.getElementById("user-list-container").style.display = "block";
         const userList = JSON.parse(event.data);
         this.UserList = userList;
-        console.log(this.UserList)
       }
     },
     getPosts(){
@@ -331,26 +336,5 @@ select{
 }
 .comment-list{
     margin-top: 10px;
-}
-.user-list-container {
-  position: absolute;
-  top: 51px; /* Adjust the top distance as needed */
-  right: 10px; /* Adjust the right distance as needed */
-  background-color: #fff; /* Background color of the user list */
-  border: 1px solid #ddd; /* Border style */
-  border-radius: 60px;
-  padding: 10px;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2); /* Add shadow effect */
-  overflow-y: auto; /* Enable vertical scrolling if the list overflows */
-}
-
-.user-list {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
-}
-
-.user-list li {
-  margin-bottom: 5px;
 }
 </style>

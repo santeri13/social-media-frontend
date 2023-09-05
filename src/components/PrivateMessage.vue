@@ -4,6 +4,8 @@
             <div id="buttons">
                 <button id="mainButton" @click="navigateToMainPage">Main Page</button>
                 <button id="cabinetButton" @click="navigateToCabinetPage">Profile</button>
+                <button id="groups" @click="navigateToGroups">Groups</button>
+                <button id="userList" @click="getUserList">User List</button>
                 <button id="logoutButton" @click="logout">Logout</button>
             </div>
         </header>
@@ -77,6 +79,9 @@ export default {
         navigateToCabinetPage() {
             this.$router.push('/cabinet'); 
         },
+        navigateToGroups(){
+            this.$router.push('/groups'); 
+        },
         sendPrivateMessage(nickanme, activity){
             const message = document.getElementById(`message-input`).value;
             const userMessageData = {
@@ -102,6 +107,18 @@ export default {
                 this.Messages = this.Messages.reverse()
                 this.activity = activity
                 this.user = name
+            }
+        },
+        getUserList() {
+            const userListRequest = {
+                type: "userlist",
+                UUID: getCookieValue(),
+            };
+            this.$socket.send(JSON.stringify(userListRequest));
+            this.$socket.onmessage = (event) => {
+                document.getElementById("user-list-container").style.display = "block";
+                const userList = JSON.parse(event.data);
+                this.UserList = userList;
             }
         },
         logout() {

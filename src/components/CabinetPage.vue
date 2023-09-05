@@ -4,6 +4,8 @@
             <div id="buttons">
                 <button id="mainButton" @click="navigateToMainPage">Main Page</button>
                 <button id="privateMesssage" @click="navigateToPrivateMesssage">Messages</button>
+                <button id="groups" @click="navigateToGroups">Groups</button>
+                <button id="userList" @click="getUserList">User List</button>
                 <button id="logoutButton" @click="logout">Logout</button>
             </div>
         </header>
@@ -146,6 +148,21 @@ export default {
         },
         navigateToPrivateMesssage() {
             this.$router.push('/messages'); 
+        },
+        navigateToGroups(){
+            this.$router.push('/groups'); 
+        },
+        getUserList() {
+          const userListRequest = {
+            type: "userlist",
+            UUID: getCookieValue(),
+          };
+          this.$socket.send(JSON.stringify(userListRequest));
+          this.$socket.onmessage = (event) => {
+            document.getElementById("user-list-container").style.display = "block";
+            const userList = JSON.parse(event.data);
+            this.UserList = userList;
+          }
         },
         logout() {
             document.cookie = "userID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
