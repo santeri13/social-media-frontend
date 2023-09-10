@@ -32,13 +32,38 @@
           password: this.password,
         };
         this.$socket.send(JSON.stringify(loginData))
-        this.$router.push('/');
+        this.$socket.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          if (data.uuid == "Invalid email or password"){
+            alert(data.uuid);
+          }
+          else{
+            document.cookie = "userID=" + data.uuid + "; max-age=86400; path=/";
+            const userUUIDData = {
+                type: "user_uuid",
+                uuid: getCookieValue(),
+            };
+            this.$socket.send(JSON.stringify(userUUIDData))
+            this.$router.push('/');
+          }
+        }
       },
       navigateToRegistrationPage() {
         this.$router.push('/register'); // Navigate to the Registration page
       },
     },
   };
+
+function getCookieValue() {
+  const cookies = document.cookie.split("; ");
+  for (let i = 0; i < cookies.length; i++) {
+    const cookie = cookies[i].split("=");
+    if (cookie[0] === "userID") {
+      return cookie.slice(1).join("=");
+    }
+  }
+  return "";
+}
 </script>
 
 <style>

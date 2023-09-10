@@ -11,11 +11,22 @@
         </header>
         <body>
             <div class="chat-container">
+                <h1>User List</h1>
                 <div class="user-list" id="user-list-container">
                     <ul id="user-list" >
                         <template v-for="users in Users" v-bind:key="users.ID">
                             <li>
                                 <a :data-status=users.activity :id="'user-'+users.Nickname" @click="showMessages(users.Nickname, users.activity)">{{users.Nickname}}</a>
+                            </li>
+                        </template>
+                    </ul>
+                </div>
+                <h1>Groups</h1>
+                <div class="group-list" id="group-list-container">
+                    <ul id="group-list" >
+                        <template v-for="group in groups" :key="group.id">
+                            <li>
+                                <a :id="'group-'+group.Name" @click="showGroupMessages(group.Name)">{{group.Name}}</a>
                             </li>
                         </template>
                     </ul>
@@ -33,7 +44,8 @@
                     </div>
                     <div id="messages" v-if="this.activity == 'online'">
                         <input type="text" id="message-input" placeholder="Type your message..." />
-                        <button @click="sendPrivateMessage(this.user, this.activity)">Send</button>
+                        <button v-if="this.type == 'person'" @click="sendPrivateMessage(this.user, this.activity)">Send</button>
+                        <button v-else-if="this.type == 'group'" @click="sendGroupMessage(this.user)">Send</button>
                     </div>
                 </div>
             </div>
@@ -49,7 +61,9 @@ export default {
         Messages:[],
         current_user:"",
         activity:"offline",
-        user:""
+        user:"",
+        groups: [],
+        type:"",
       };
     },
     mounted() {
@@ -65,7 +79,16 @@ export default {
             this.$socket.onmessage = (event) =>{
                 const userList = JSON.parse(event.data);
                 this.Users = userList
-                console.log(this.Users)
+                const recivegroups = {
+                    type: "get_groups",
+                    Page: "messages",
+                    UUID: getCookieValue(),
+                };
+                this.$socket.send(JSON.stringify(recivegroups))
+                this.$socket.onmessage = (event) => {
+                    const groupList = JSON.parse(event.data);
+                    this.groups = groupList
+                }
             }
         },
         navigateToMainPage() {
@@ -93,6 +116,17 @@ export default {
             this.$socket.send(JSON.stringify(userMessageData))
             this.showMessages(nickanme, activity)
         },
+        sendGroupMessage(name){
+            const message = document.getElementById(`message-input`).value;
+            const userMessageData = {
+                type: "sendGroupMessage", 
+                UserID: getCookieValue(), 
+                Nickname: name,
+                Content: message,
+            }
+            this.$socket.send(JSON.stringify(userMessageData))
+            this.showGroupMessages(name)
+        },
         showMessages(name, activity){
             const userMessageData = {
                 type: "showmessage", 
@@ -106,6 +140,24 @@ export default {
                 this.Messages = messagesList
                 this.Messages = this.Messages.reverse()
                 this.activity = activity
+                this.type = "person"
+                this.user = name
+            }
+        },
+        showGroupMessages(name){
+            const userMessageData = {
+                type: "showgroupmessage", 
+                UserID: getCookieValue(), 
+                Nickname: name,
+                Offset: 0,
+            }
+            this.$socket.send(JSON.stringify(userMessageData))
+            this.$socket.onmessage = (event) =>{
+                const messagesList = JSON.parse(event.data);
+                this.Messages = messagesList
+                this.Messages = this.Messages.reverse()
+                this.activity = 'online'
+                this.type = "group"
                 this.user = name
             }
         },
@@ -164,15 +216,18 @@ function getCookieValue() {
         background-color: #fff;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
-    .user-list h2 {
+    .user-list h2,
+    .group-list h2 {
         margin-bottom: 10px;
         color: #333;
     }
-    .user-list ul {
+    .user-list ul,
+    .group-list ul{
         list-style-type: none;
         padding: 0;
     }
-    .user-list li [data-status="active"] {
+    .user-list li [data-status="online"],
+    .group-list li [data-status="online"]{
         display: inline-block;
         margin: 5px;
         padding: 10px 20px;
@@ -182,7 +237,8 @@ function getCookieValue() {
         cursor: pointer;
         transition: background-color 0.3s ease;
     }
-    .user-list li [data-status=""]{
+    .user-list li [data-status=""],
+    .group-list li [data-status=""]{
         display: inline-block;
         margin: 5px;
         padding: 10px 20px;
@@ -192,10 +248,12 @@ function getCookieValue() {
         cursor: pointer;
         transition: background-color 0.3s ease;
     }
-    .user-list li:hover [data-status="active"] {
+    .user-list li:hover [data-status="online"],
+    .group-list li:hover [data-status="online"] {
         background-color: darkblue;
     }
-    .user-list li:hover [data-status=""]{
+    .user-list li:hover [data-status="offline"],
+    .group-list li:hover [data-status="offline"]{
         background-color: darkred;
     }
     .chat-window {

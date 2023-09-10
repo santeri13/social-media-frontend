@@ -43,6 +43,8 @@ export default {
     mounted() {
         const recivegroups = {
             type: "get_groups",
+            Page: "group",
+            UUID: getCookieValue(),
         };
         this.$socket.send(JSON.stringify(recivegroups))
         this.$socket.onmessage = (event) => {

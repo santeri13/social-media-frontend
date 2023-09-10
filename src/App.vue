@@ -75,4 +75,26 @@ header{
 .user-list li {
   margin-bottom: 5px;
 }
+
+.notifiction-list-container {
+  position: absolute;
+  top: 51px; /* Adjust the top distance as needed */
+  right: 10px; /* Adjust the right distance as needed */
+  background-color: #fff; /* Background color of the user list */
+  border: 1px solid #ddd; /* Border style */
+  border-radius: 60px;
+  padding: 10px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2); /* Add shadow effect */
+  overflow-y: auto; /* Enable vertical scrolling if the list overflows */
+}
+
+.notifiction-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.notifiction-list li {
+  margin-bottom: 5px;
+}
 </style>

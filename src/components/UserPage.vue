@@ -43,7 +43,7 @@
         </div>
         <div v-else>
             <h1>This account is private</h1>
-            <button id="followUser" @click="followUser(userid)">Follow</button>
+            <button id="followUser" @click="sendNotification(userid)">Follow</button>
         </div>
       </main>
     </div>
@@ -151,6 +151,15 @@ export default {
                 user_uuid: getCookieValue(),
             };
             this.$socket.send(JSON.stringify(followUser))
+        },
+        sendNotification(userid){
+            const sendNotification = {
+                type: "sendNotification",
+                Type: "follow",
+                UUID:getCookieValue(),
+                Information: userid,
+            };
+            this.$socket.send(JSON.stringify(sendNotification))
         }
     }
 }

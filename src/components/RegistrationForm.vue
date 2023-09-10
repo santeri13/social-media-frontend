@@ -96,7 +96,21 @@
         };
 
         this.$socket.send(JSON.stringify(registrationData))
-        this.$router.push('/');
+        this.$socket.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          if (data.uuid=="Nickname is used" || data.uuid=="Email is used"){
+            alert(data.uuid);
+          }
+          else{
+            document.cookie = "userID=" + data.uuid + "; max-age=86400; path=/";
+            const userUUIDData = {
+                type: "user_uuid",
+                uuid: getCookieValue(),
+            };
+            this.$socket.send(JSON.stringify(userUUIDData))
+            this.$router.push('/');
+          }
+        }
       },
       navigateToLoginPage() {
         this.$router.push('/login'); // Navigate to the Login page
@@ -106,6 +120,17 @@
       },
     },
   };
+
+function getCookieValue() {
+  const cookies = document.cookie.split("; ");
+  for (let i = 0; i < cookies.length; i++) {
+    const cookie = cookies[i].split("=");
+    if (cookie[0] === "userID") {
+      return cookie.slice(1).join("=");
+    }
+  }
+  return "";
+}
 </script>
 
 <style>

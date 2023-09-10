@@ -7,6 +7,7 @@
       <button id="privateMesssage" @click="navigateToPrivateMesssage">Messages</button>
       <button id="groups" @click="navigateToGroups">Groups</button>
       <button id="userList" @click="getUserList">User List</button>
+      <button id="notification" @click="getNotificatons">Notifications</button>
       <button id="logoutButton" @click="logout">Logout</button>
     </header>
     <main>
@@ -15,30 +16,49 @@
           <template v-for="user in UserList" v-bind:key="user.ID">
             <li>
               <p @click="navigateToUserPage(user.user_uuid)">Username: {{ user.Nickname }} Status: {{ user.activity }}</p>
-              <button id="followUser" @click="followUser(user.user_uuid)">Follow</button>
+              <button id="followUser" @click="followUser(user.user_uuid, getCookieValue())">Follow</button>
+            </li>
+          </template>
+        </ul>
+      </div>
+      <div class="notifiction-list-container" id="notifiction-list-container">
+        <ul class="notifiction-list">
+          <template v-for="notifications in Notifications" v-bind:key="notifications.ID">
+            <li>
+              <p>Message: {{ notifications.Message }}</p>
+              <div v-if="notifications.Type == 'group'">
+                <button @click="addToGroup(notifications.Information); deleteNotification(notifications.ID);">Accept</button>
+                <button @click="deleteNotification(notifications.ID)">Decline</button>
+              </div>
+              <div v-if="notifications.Type == 'follow'">
+                <button @click="followUser(getCookieValue(), notifications.Information); deleteNotification(notifications.ID);">Accept</button>
+                <button @click="deleteNotification(notifications.ID)">Decline</button>
+              </div>
             </li>
           </template>
         </ul>
       </div>
       <div id="post-creation">
         <h2>Create a Post</h2>
-        <label for="post-title">Title:</label>
-        <input type="text" id="post-title"  v-model="Title" required>
+        <form @submit.prevent="sendpost">
+          <label for="post-title">Title:</label>
+          <input type="text" id="post-title"  v-model="Title" required>
                 
-        <label for="post-content">Content:</label>
-        <textarea id="post-content"  v-model="Content" required></textarea>
+          <label for="post-content">Content:</label>
+          <textarea id="post-content"  v-model="Content" required></textarea>
                 
-        <label for="post-category">Category:</label>
-        <select id="post-category" v-model="Category" required>
-          <option value="general">General</option>
-          <option value="news">News</option>
-          <option value="discussion">Discussion</option>
-        </select>
+          <label for="post-category">Category:</label>
+          <select id="post-category" v-model="Category" required>
+            <option value="general">General</option>
+            <option value="news">News</option>
+            <option value="discussion">Discussion</option>
+          </select>
 
-        <label for="post-image">Image/GIF:</label>
-        <input type="file" accept="image/*" @change="selectImage" />
+          <label for="post-image">Image/GIF:</label>
+          <input type="file" accept="image/*" @change="selectImage" />
 
-        <button @click="sendpost">Create Post</button>
+          <button type="submit">Create Post</button>
+        </form>
       </div>
         
       <div id="post-feed">
@@ -81,6 +101,7 @@ export default {
         selectedImage: null,
         Posts:[],
         UserList:[],
+        Notifications:[],
         disabled:false,
         followed:false,
       };
@@ -105,6 +126,7 @@ export default {
       document.getElementById("post-creation").style.display = "none";
       document.getElementById("privateMesssage").style.display = "none";
       document.getElementById("userList").style.display = "none";
+      document.getElementById("notification").style.display = "none";
       document.getElementById("groups").style.display = "none";
     }
     else{
@@ -115,6 +137,7 @@ export default {
       document.getElementById("post-creation").style.display = "block";
       document.getElementById("privateMesssage").style.display = "block";
       document.getElementById("userList").style.display = "block";
+      document.getElementById("notification").style.display = "block";
       document.getElementById("groups").style.display = "block";
     }
     this.$socket.onmessage = (event) => {
@@ -197,26 +220,55 @@ export default {
       this.$router.push('/');
     },
     sendcomment(title){
-      const commentData = {
+      if (title != ""){
+        const commentData = {
           type: "comment", 
           UserID: getCookieValue(), 
           Content: document.getElementById(`comment-input-${title}`).value, 
           PostID: title
         };
-      this.$socket.send(JSON.stringify(commentData))
-      this.getPosts()
-      this.$router.push('/');
+        this.$socket.send(JSON.stringify(commentData))
+        this.getPosts()
+        this.$router.push('/');
+      }
+      else{
+        alert("Comment is empty");
+      }
     },
     getUserList() {
-      const userListRequest = {
-        type: "userlist",
-        UUID: getCookieValue(),
-      };
-      this.$socket.send(JSON.stringify(userListRequest));
-      this.$socket.onmessage = (event) => {
-        document.getElementById("user-list-container").style.display = "block";
-        const userList = JSON.parse(event.data);
-        this.UserList = userList;
+      if (document.getElementById("user-list-container").style.display == "block"){
+        document.getElementById("user-list-container").style.display = "none";
+      }
+      else{
+        const userListRequest = {
+          type: "userlist",
+          UUID: getCookieValue(),
+        };
+        this.$socket.send(JSON.stringify(userListRequest));
+        this.$socket.onmessage = (event) => {
+          document.getElementById("notifiction-list-container").style.display = "none";
+          document.getElementById("user-list-container").style.display = "block";
+          const userList = JSON.parse(event.data);
+          this.UserList = userList;
+        }
+      }
+    },
+    getNotificatons(){
+      if (document.getElementById("notifiction-list-container").style.display == "block"){
+        document.getElementById("notifiction-list-container").style.display = "none";
+      }
+      else{
+        const notificationListRequest = {
+          type: "notificationlist",
+          UUID: getCookieValue(),
+        };
+        this.$socket.send(JSON.stringify(notificationListRequest));
+        this.$socket.onmessage = (event) => {
+          document.getElementById("user-list-container").style.display = "none";
+          document.getElementById("notifiction-list-container").style.display = "block";
+          const notificationList = JSON.parse(event.data);
+          this.Notifications = notificationList;
+        }
       }
     },
     getPosts(){
@@ -229,7 +281,7 @@ export default {
         this.Posts = postList
       }
     },
-    followUser(userid){
+    followUser(userid, followinguser){
       if (this.followed === true){
         this.followed = false
         this.disabled = false
@@ -241,9 +293,27 @@ export default {
       const followUser = {
         type: "followUser",
         userid: userid,
-        user_uuid: getCookieValue(),
+        user_uuid: followinguser,
       };
       this.$socket.send(JSON.stringify(followUser))
+      this.$router.push('/');
+    },
+    addToGroup(groupName){
+      const addToGroup = {
+        type: "addToGroup",
+        Name: groupName,
+        Description: getCookieValue(),
+      };
+      this.$socket.send(JSON.stringify(addToGroup))
+      this.$router.push('/');
+    },
+    deleteNotification(id){
+      const deleteNotification = {
+        type: "deleteNotification",
+        ID: id,
+      };
+      this.$socket.send(JSON.stringify(deleteNotification))
+      this.$router.push('/');
     },
     getCookie() {
       const cookies = document.cookie.split("; ");
