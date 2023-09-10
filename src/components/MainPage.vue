@@ -54,6 +54,13 @@
             <option value="discussion">Discussion</option>
           </select>
 
+          <label for="post-privacy">Privacy:</label>
+          <select id="post-category" v-model="Privacy" required>
+            <option value="public">Public</option>
+            <option value="private">Private</option>
+            <option value="almost_private">Almost Private</option>
+          </select>
+
           <label for="post-image">Image/GIF:</label>
           <input type="file" accept="image/*" @change="selectImage" />
 
@@ -98,6 +105,7 @@ export default {
         Title: "",
         Content: "",
         Category: "",
+        Privacy:"",
         selectedImage: null,
         Posts:[],
         UserList:[],
@@ -213,6 +221,7 @@ export default {
           Title: this.Title,
           Content: this.Content,
           Category: this.Category,
+          Privacy: this.Privacy,
           ImagePath: imagePath,
         };
       this.$socket.send(JSON.stringify(postData))
@@ -273,7 +282,8 @@ export default {
     },
     getPosts(){
       const postsJSON = {
-        type: "posts", 
+        type: "posts",
+        UUID: getCookieValue(),
       };
       this.$socket.send(JSON.stringify(postsJSON))
       this.$socket.onmessage = (event) =>{
